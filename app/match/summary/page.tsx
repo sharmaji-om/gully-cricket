@@ -37,7 +37,7 @@ export default function MatchSummaryPage() {
           colors: ['#22c55e', '#16a34a', '#ffffff', '#fbbf24'],
         })
       }, 500)
-      syncToSupabase()
+      syncToSupabase().catch(() => {})
     }
   }, [hydrated, match, syncToSupabase])
 

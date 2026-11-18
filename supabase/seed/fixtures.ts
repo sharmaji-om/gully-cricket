@@ -16,13 +16,13 @@ const roster: [string, Player['preferred_role'], number, number, number, number,
   ['Yash Iyer', 'bowler', 4, 8, 8, 84, 24],
   ['Dhruv Joshi', 'allrounder', 7, 8, 7, 242, 21],
 ]
-export const demoPlayers: Player[] = roster.map(([name, role, batting, bowling, fielding, runs, wickets], i) => ({
-  id: `demo-player-${i + 1}`, name, nickname: ['Flash', 'Yorker', 'Rockstar', 'Gloves', 'Rocket', 'Captain', 'Six Machine', 'Swing', 'Chase', 'Safe Hands', 'Spin', 'Finisher'][i],
+export const seedPlayers: Player[] = roster.map(([name, role, batting, bowling, fielding, runs, wickets], i) => ({
+  id: `10000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`, name, nickname: ['Flash', 'Yorker', 'Rockstar', 'Gloves', 'Rocket', 'Captain', 'Six Machine', 'Swing', 'Chase', 'Safe Hands', 'Spin', 'Finisher'][i],
   preferred_role: role, batting_skill: batting, bowling_skill: bowling, fielding_skill: fielding,
-  matches_played: 18, total_runs: runs, total_wickets: wickets,
-  strike_rate: Math.round((125 + batting * 5.3) * 10) / 10,
-  economy: Math.round((12 - bowling * .55) * 10) / 10,
-  catches: 4 + i % 7, run_outs: i % 4, mvps: i % 4, wins: 9 + i % 4, losses: 9 - i % 4,
+  matches_played: 0, total_runs: 0, total_wickets: 0,
+  strike_rate: 0,
+  economy: 0,
+  catches: 0, run_outs: 0, mvps: 0, wins: 0, losses: 0,
   ai_balance_score: Math.round((batting * .4 + bowling * .4 + fielding * .2) * 10) / 10,
   form_trend: i % 4 === 0 ? 'rising' : i % 5 === 0 ? 'falling' : 'stable',
   clutch_factor: 6 + i % 4, created_at: created, updated_at: created,
@@ -31,9 +31,9 @@ function team(id: string, name: string, players: Player[], color: string): Team 
   const avg = (key: 'batting_skill' | 'bowling_skill' | 'ai_balance_score') => Math.round(players.reduce((s, p) => s + p[key], 0) / players.length * 10) / 10
   return { id, name, players, captain: players[2], color, strength_score: avg('ai_balance_score'), batting_strength: avg('batting_skill'), bowling_strength: avg('bowling_skill') }
 }
-export const demoBalance: TeamBalance = {
-  team_a: team('demo-team-a', 'Gully Strikers', demoPlayers.slice(0, 6), '#d2f65a'),
-  team_b: team('demo-team-b', 'Street Royals', demoPlayers.slice(6), '#7daaff'),
+export const seedBalance: TeamBalance = {
+  team_a: team('20000000-0000-4000-8000-000000000001', 'Gully Strikers', seedPlayers.slice(0, 6), '#d2f65a'),
+  team_b: team('20000000-0000-4000-8000-000000000002', 'Street Royals', seedPlayers.slice(6), '#7daaff'),
   fairness_percentage: 98, team_a_win_probability: 51, team_b_win_probability: 49, balance_score: 9.8,
 }
 const rules: MatchRules = { roof_catch_enabled: true, caught_behind_enabled: true, one_tip_one_hand_enabled: true,
@@ -60,6 +60,7 @@ function innings(batting: Team, bowling: Team, deliveries: number[], wickets: nu
       is_legal: true, ...(out ? { wicket_type: 'bowled' as const } : {}), timestamp: created }
     const current = entry(striker); entry(partner); current.balls_faced++
     current.runs += ball.runs; if (runs === 4 && !out) current.fours++; if (runs === 6 && !out) current.sixes++
+    ball.match_id = prefix.slice(0, -2)
     balls.push(ball)
     if (out) {
       fall.push({ wicket_number: fall.length + 1, player_id: current.player.id, score: computeScore(balls).runs, over: ball.over_number, ball: ball.ball_number, dismissal_type: 'bowled' })
@@ -78,8 +79,8 @@ function innings(batting: Team, bowling: Team, deliveries: number[], wickets: nu
 }
 const first = [1,0,4,1,2,0,6,1,0,4,1,2,0,1,4,6,1,0,2,1,4,0,1,6,1,2,0,4,1,1,6,0,2,4,1,2]
 const second = [0,4,1,1,6,0,2,1,4,0,1,2,6,1,0,4,2,1,0,1,4,1,6,0,2,4,1,1,0,6,1,2,4,1,6,4]
-export function createDemoMatch(id: string, live = false, date = '2026-11-17'): Match {
-  const a = demoBalance.team_a, b = demoBalance.team_b
+export function createSeedMatch(id: string, live = false, date = '2026-11-17'): Match {
+  const a = seedBalance.team_a, b = seedBalance.team_b
   const one = innings(a, b, first, [8, 20, 31], `${id}-1`)
   const two = innings(b, a, live ? second.slice(0, 26) : second, [11, 23], `${id}-2`)
   // Live scoring expects just the current two batters; completed scorecards retain all recorded batters.
@@ -94,7 +95,7 @@ export function createDemoMatch(id: string, live = false, date = '2026-11-17'): 
     commentary: two.balls.slice(-6).reverse().map(ball => ({ id: `comment-${ball.id}`, ball_id: ball.id, text: ball.type === 'wicket' ? 'Bowled! The stumps go flying.' : ball.runs === 6 ? 'Six! That one is out of the gully.' : ball.runs === 4 ? 'Four! Finds the gap beautifully.' : `${ball.runs} run${ball.runs === 1 ? '' : 's'} added to the board.`, type: 'ball', timestamp: created, is_highlight: ball.runs >= 4 || ball.type === 'wicket' })),
     momentum: [], is_super_over: false, created_at: `${date}T10:00:00.000Z`, status: live ? 'live' : 'completed' }
 }
-export function createDemoData() {
-  return structuredClone({ players: demoPlayers, matches: [createDemoMatch('demo-match-1'), createDemoMatch('demo-match-2', false, '2026-11-15'), createDemoMatch('demo-match-3', false, '2026-11-12')] })
+export function createSeedData() {
+  return structuredClone({ players: seedPlayers, matches: [createSeedMatch('30000000-0000-4000-8000-000000000001'), createSeedMatch('30000000-0000-4000-8000-000000000002', false, '2026-11-15'), createSeedMatch('30000000-0000-4000-8000-000000000003', false, '2026-11-12')] })
 }
-export type DemoData = ReturnType<typeof createDemoData>
+export type SeedData = ReturnType<typeof createSeedData>

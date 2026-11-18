@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ChevronLeft, Trophy, Calendar, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { useMatchStore } from '@/store/matchStore'
 
 interface MatchSummary {
   id: string
@@ -18,6 +20,7 @@ interface MatchSummary {
 }
 
 export default function MatchHistoryPage() {
+  const router = useRouter()
   const [matches, setMatches] = useState<MatchSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -42,6 +45,16 @@ export default function MatchHistoryPage() {
   useEffect(() => {
     fetchHistory()
   }, [])
+
+  async function openScorecard(id: string) {
+    try {
+      const response = await fetch(`/api/matches/${id}`, { cache: 'no-store' })
+      if (!response.ok) throw new Error('Match unavailable')
+      const match = await response.json()
+      useMatchStore.setState({ match, syncError: null, lastSyncAt: null })
+      router.push(`/match/summary?match=${id}`)
+    } catch { toast.error('Could not load the scorecard') }
+  }
 
   async function handleDeleteMatch(matchId: string) {
     const ok = window.confirm('Delete this match from history?')
@@ -160,6 +173,7 @@ export default function MatchHistoryPage() {
                   </span>
                 </div>
                 <div className="mt-3 flex justify-end">
+                  <button onClick={() => openScorecard(match.id)} className="mr-auto text-xs font-semibold text-pitch-300">View scorecard</button>
                   <button
                     onClick={() => handleDeleteMatch(match.id)}
                     disabled={deletingId === match.id}

@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { CookieOptions } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 
 function getSupabasePublicConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -39,11 +40,12 @@ export function createServerSupabaseClient() {
 }
 
 export function createServiceRoleClient() {
-  const { createClient } = require('@supabase/supabase-js')
-  const { url } = getSupabasePublicConfig()
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error('Missing Supabase configuration: set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.')
   return createClient(
     url,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    key,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 }

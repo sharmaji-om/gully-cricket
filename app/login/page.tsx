@@ -15,8 +15,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const supabase = createClient()
-
   async function handleAuth() {
     if (!email || !password) {
       toast.error('Fill in all fields')
@@ -24,6 +22,7 @@ export default function LoginPage() {
     }
     setLoading(true)
     try {
+      const supabase = createClient()
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error

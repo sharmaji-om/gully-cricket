@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/supabase/server'
+export { POST } from './sync/route'
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,6 +9,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+
+    if (searchParams.get('active') === 'true') {
+      const { data, error } = await supabase.from('matches').select('state').in('status', ['live', 'innings_break']).order('updated_at', { ascending: false }).limit(1).maybeSingle()
+      if (error) throw error
+      return NextResponse.json(data?.state ?? null)
+    }
 
     let query = supabase
       .from('matches')
@@ -25,34 +33,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = createServiceRoleClient()
-
-    const body = await request.json()
-    const { match } = body
-
-    const { data, error } = await supabase
-      .from('matches')
-      .insert({
-        user_id: null,
-        state: match,
-        status: match.status,
-        team_a_name: match.team_a?.name,
-        team_b_name: match.team_b?.name,
-        total_overs: match.rules?.max_overs,
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return NextResponse.json(data, { status: 201 })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = createServiceRoleClient()
@@ -60,10 +40,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
 
-    let query = supabase.from('matches').delete()
-    if (status) query = query.eq('status', status)
-
-    const { error } = await query
+    const { error } = await supabase.rpc('delete_cricket_matches', { p_status: status })
     if (error) throw error
 
     return NextResponse.json({ success: true })

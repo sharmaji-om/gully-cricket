@@ -1,4 +1,4 @@
-// Exercise the AI and local-data flows with mocked Gemini HTTP and a small NextResponse adapter.
+// Exercise the AI flows with mocked Gemini HTTP and a small NextResponse adapter.
 // No API key, network request, Supabase connection, or Next server is needed.
 const { test, beforeEach, afterEach } = require('node:test')
 const assert = require('node:assert/strict')
@@ -179,67 +179,6 @@ test('applying a suggested swap retains membership and recalculates every balanc
   assert.equal(swapped.balance_score, swapped.fairness_percentage / 10)
   assert.equal(swapped.team_a_win_probability + swapped.team_b_win_probability, 100)
   assert.ok(Number.isFinite(swapped.team_a.strength_score))
-})
-
-const { createDemoData, createDemoMatch, demoBalance } = require('../lib/demo/fixtures.ts')
-const { createDemoApi } = require('../lib/demo/api.ts')
-test('demo fixtures populate a full squad, history, and a playable live chase', () => {
-  const data = createDemoData(), live = createDemoMatch('demo-live-match', true)
-  assert.equal(data.players.length, 12)
-  assert.equal(new Set(data.players.map(p => p.id)).size, 12)
-  assert.equal(data.matches.length, 3)
-  assert.ok(data.matches.every(m => m.status === 'completed'))
-  assert.equal(live.status, 'live')
-  assert.equal(live.current_innings.batsmen.length, 2)
-  assert.equal(live.current_innings.batsmen.filter(b => b.is_striker).length, 1)
-  assert.ok(live.current_innings.bowler)
-  assert.ok(live.current_innings.score.runs < live.target)
-  assert.equal(live.current_innings.score.legal_balls, 26)
-  assert.ok(contracts.teamsContextSchema.safeParse(require('../lib/ai/context.ts').teamsContext(demoBalance)).success)
-  for (const m of data.matches) assert.ok(contracts.matchContextSchema.safeParse(matchContext(m)).success)
-})
-test('demo API fills dashboard, leaderboard, and player profiles without a database', async () => {
-  const api = createDemoApi()
-  const call = (route, method = 'GET', body = null) => api.handle(new URL('http://localhost:3000'+route), method, body)
-  assert.equal((await call('/api/players').json()).length, 12)
-  assert.equal((await call('/api/stats').json()).length, 12)
-  const history = await call('/api/matches?status=completed').json()
-  assert.equal(history.length, 3)
-  assert.equal(history[0].winner_team, 'Street Royals')
-  assert.equal((await call('/api/players/demo-player-1').json()).name, 'Aarav Sharma')
-  assert.equal(call('/api/players/unknown').status, 404)
-})
-test('demo player edits and deletion persist locally and reset restores the sample squad', async () => {
-  let saved
-  const api = createDemoApi(undefined, state => { saved = state })
-  const call = (route, method, body) => api.handle(new URL('http://localhost:3000'+route), method, body)
-  const added = await call('/api/players', 'POST', { name: 'Demo Guest', batting_skill: 8 }).json()
-  assert.equal(api.snapshot().players.length, 13)
-  assert.equal(saved.players.length, 13)
-  await call('/api/players/'+added.id, 'PATCH', { nickname: 'Guest' })
-  assert.equal(api.snapshot().players.find(p => p.id === added.id).nickname, 'Guest')
-  await call('/api/players/'+added.id, 'DELETE')
-  assert.equal(api.snapshot().players.length, 12)
-  api.reset()
-  assert.equal(api.snapshot().players.length, 12)
-})
-test('demo match sync is idempotent and clearing history affects only demo state', async () => {
-  const api = createDemoApi(), live = createDemoMatch('demo-live-match', true)
-  const call = (route, method, body) => api.handle(new URL('http://localhost:3000'+route), method, body)
-  await call('/api/matches/sync', 'POST', { match: live })
-  await call('/api/matches/sync', 'POST', { match: live })
-  assert.equal(api.snapshot().matches.length, 4)
-  await call('/api/matches?status=completed', 'DELETE')
-  assert.equal(api.snapshot().matches.length, 1)
-  api.reset()
-  assert.equal(api.snapshot().matches.length, 3)
-})
-test('every Gemini request bypasses dummy data and never receives a fake AI response', () => {
-  const api = createDemoApi()
-  for (const feature of ['status', 'teams', 'match', 'coach']) {
-    for (const method of ['GET', 'POST']) assert.equal(api.handle(new URL('http://localhost:3000/api/ai/'+feature), method, {}), null)
-  }
-  assert.equal(api.handle(new URL('http://localhost:3000/api/unrelated'), 'GET', null), null)
 })
 
 test('same-origin loopback requests work when Next normalises its internal hostname', async () => {

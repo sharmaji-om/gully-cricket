@@ -1,7 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { saveMatchSnapshot } from '@/lib/database/match-sync'
 import { v4 as uuidv4 } from 'uuid'
-import { demoEnabled } from '@/lib/demo/config'
 import type {
   Match,
   Ball,
@@ -70,6 +69,7 @@ interface MatchStoreState {
   match: Match | null
   isSyncing: boolean
   lastSyncAt: string | null
+  syncError: string | null
 
   // Match lifecycle
   initMatch: (match: Match) => void
@@ -105,16 +105,19 @@ interface MatchStoreState {
   syncToSupabase: () => Promise<void>
 }
 
+let pendingSaves = 0
+let saveSequence = 0
+
 export const useMatchStore = create<MatchStoreState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       match: null,
       isSyncing: false,
       lastSyncAt: null,
+      syncError: null,
 
       initMatch: (match) => set({ match }),
 
-      clearMatch: () => set({ match: null }),
+      clearMatch: () => set({ match: null, syncError: null, lastSyncAt: null }),
 
       recordBall: (type, runs, options = {}) => {
         const state = get()
@@ -669,28 +672,20 @@ export const useMatchStore = create<MatchStoreState>()(
         const { match } = get()
         if (!match) return
 
+        pendingSaves++
+        const sequence = ++saveSequence
         set({ isSyncing: true })
 
         try {
-          const response = await fetch('/api/matches/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ match }),
-          })
-
-          if (response.ok) {
-            set({ lastSyncAt: new Date().toISOString() })
-          }
+          await saveMatchSnapshot(match)
+          if (sequence === saveSequence) set({ lastSyncAt: new Date().toISOString(), syncError: null })
         } catch (error) {
-          console.error('Sync failed:', error)
+          if (sequence === saveSequence) set({ syncError: error instanceof Error ? error.message : 'Match save failed' })
+          throw error
         } finally {
-          set({ isSyncing: false })
+          pendingSaves--
+          set({ isSyncing: pendingSaves > 0 })
         }
       },
-    }),
-    {
-      name: demoEnabled ? 'gully-cricket-demo-match' : 'gully-cricket-match',
-      partialize: (state) => ({ match: state.match }),
-    }
-  )
+  })
 )

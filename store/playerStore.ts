@@ -1,7 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import type { Player } from '@/types'
-import { demoEnabled } from '@/lib/demo/config'
 
 interface PlayerStoreState {
   players: Player[]
@@ -18,8 +16,7 @@ interface PlayerStoreState {
 }
 
 export const usePlayerStore = create<PlayerStoreState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       players: [],
       isLoading: false,
       error: null,
@@ -102,10 +99,5 @@ export const usePlayerStore = create<PlayerStoreState>()(
           }))
         } catch {}
       },
-    }),
-    {
-      name: demoEnabled ? 'gully-cricket-demo-players' : 'gully-cricket-players',
-      partialize: (state) => ({ players: state.players, lastFetchAt: state.lastFetchAt }),
-    }
-  )
+  })
 )

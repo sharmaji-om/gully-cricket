@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import type { MatchRules, TeamBalance, MatchSetupState } from '@/types'
 
 const DEFAULT_RULES: MatchRules = {
@@ -29,8 +28,7 @@ interface SettingsStoreState {
 }
 
 export const useSettingsStore = create<SettingsStoreState>()(
-  persist(
-    (set) => ({
+  (set) => ({
       defaultRules: DEFAULT_RULES,
       theme: 'dark',
       soundEnabled: true,
@@ -41,9 +39,7 @@ export const useSettingsStore = create<SettingsStoreState>()(
       setTheme: (theme) => set({ theme }),
 
       toggleSound: () => set(state => ({ soundEnabled: !state.soundEnabled })),
-    }),
-    { name: 'gully-cricket-settings' }
-  )
+  })
 )
 
 // ============================================================
@@ -70,7 +66,7 @@ export const useMatchSetupStore = create<MatchSetupStoreState>()((set, get) => (
   setCommonPlayer: (id) => set({ common_player_id: id }),
   reset: () => set({
     team_balance: null,
-    rules: DEFAULT_RULES,
+    rules: useSettingsStore.getState().defaultRules,
     selected_players: [],
     common_player_id: undefined,
   }),

@@ -8,6 +8,8 @@ import { ChevronLeft } from 'lucide-react'
 import { useMatchSetupStore } from '@/store/settingsStore'
 import { useMatchStore } from '@/store/matchStore'
 import { v4 as uuidv4 } from 'uuid'
+import { toast } from 'sonner'
+import { saveMatchSnapshot } from '@/lib/database/match-sync'
 import type { Match, InningsState } from '@/types'
 
 export default function TossPage() {
@@ -21,6 +23,7 @@ export default function TossPage() {
   const [flipResult, setFlipResult] = useState<'heads' | 'tails' | null>(null)
   const [selectedCaller, setSelectedCaller] = useState<string | null>(null)
   const [calledSide, setCalledSide] = useState<'heads' | 'tails' | null>(null)
+  const [saving, setSaving] = useState(false)
 
   if (!team_balance) {
     return (
@@ -43,8 +46,8 @@ export default function TossPage() {
     setIsFlipping(false)
   }
 
-  function startMatch() {
-    if (!tossWinner || !tossDecision) return
+  async function startMatch() {
+    if (!tossWinner || !tossDecision || saving) return
 
     const battingTeam = tossDecision === 'bat'
       ? (tossWinner === team_a.id ? team_a : team_b)
@@ -88,8 +91,16 @@ export default function TossPage() {
       status: 'live',
     }
 
-    initMatch(match)
-    router.push('/match/live')
+    setSaving(true)
+    try {
+      await saveMatchSnapshot(match)
+      initMatch(match)
+      router.push(`/match/live?match=${match.id}`)
+    } catch {
+      toast.error('Could not create the match in Supabase. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const tossWinnerTeam = tossWinner === team_a.id ? team_a : tossWinner === team_b.id ? team_b : null
@@ -268,6 +279,7 @@ export default function TossPage() {
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={startMatch}
+              disabled={saving}
               className="w-full py-4 rounded-2xl bg-pitch-600 text-white font-display font-bold text-base shadow-[0_0_30px_rgba(34,197,94,0.3)]"
             >
               🏏 Start Match!

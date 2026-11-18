@@ -1,235 +1,186 @@
 # Gully Cricket
 
-A cricket scoring and squad management app for neighbourhood matches. Manage players, create balanced teams, configure local rules, score deliveries, and review results. Gemini adds team reviews, personalised practice plans, and post-match analysis.
+A cricket scoring and squad management app for neighbourhood matches. Create players, generate balanced teams, configure local rules, score deliveries, and review results. Gemini adds team reviews, coaching plans, and match analysis.
 
-The app runs with browser-local sample data or a shared Supabase database. Gemini requests always run on the server with a real API key.
+**Supabase is the only persistent data source.** Players, matches, statistics, and club settings are shared across devices. Zustand holds temporary UI state; cricket data is never saved to browser local storage. Fictional data is inserted explicitly into Supabase with the seed command.
 
 ## Features
 
-- Player profiles with roles, skill ratings, career totals, and form indicators.
-- Team generation using a greedy assignment and local-search algorithm, with manual swaps and support for a common player.
-- Configurable overs, ball type, retirement options, and gully rules such as roof catches and one-tip-one-hand catches.
-- Live scoring with extras, wickets, strike rotation, innings changes, and undo.
-- Match summaries with player-of-the-match calculations and scoring charts.
-- Leaderboards for runs, wickets, strike rate, and economy.
-- Gemini team reviews with optional, validated player swaps.
-- Gemini coaching plans based on a player's stats, chosen focus, and goal.
-- Gemini match analysis based on recorded scores and over summaries.
+- Player profiles, skill ratings, career totals, and leaderboards.
+- Balanced teams with manual swaps and support for a common player.
+- Configurable overs, retirement rules, roof catches, and one-tip-one-hand catches.
+- Ball-by-ball scoring, extras, wickets, strike rotation, innings changes, and undo.
+- Database-backed match recovery and historical scorecards.
+- Gemini team reviews with validated optional swaps, player coaching, and match analysis.
 
 ## Tech stack
 
 | Area | Technology |
 | --- | --- |
 | Application | Next.js 14 App Router, React 18, TypeScript |
-| Styling | Tailwind CSS, custom CSS |
-| State | Zustand; browser storage for persisted state |
-| Animation and charts | Framer Motion, Recharts |
-| UI utilities | Lucide icons, Sonner notifications, canvas-confetti |
-| Server endpoints | Next.js route handlers |
-| Database | Supabase PostgreSQL |
-| Optional sign-in | Supabase Auth |
-| AI | Gemini REST API with structured JSON output |
+| UI | Tailwind CSS, Framer Motion, Lucide, Sonner |
+| Charts | Recharts |
+| Temporary state | Zustand, React state |
+| Persistent storage | Supabase PostgreSQL |
+| Optional authentication | Supabase Auth |
+| AI | Gemini REST API, structured JSON responses |
 | Validation | Zod |
 | Tests | Node.js test runner |
-| Hosting configuration | Vercel |
+| Deployment | Vercel |
 
-## Run locally
+## Setup
 
-### Requirements
-
-- Node.js 20 or newer; Node.js 22 is recommended.
-- npm and a local checkout of this repository.
-- A Gemini API key to use the AI features.
-- A Supabase project only if you want database-backed storage.
-
-### 1. Install dependencies
-
-Run these commands from the repository root:
+Use Node.js 20 or newer and npm. Run commands from the repository root.
 
 ```sh
 npm ci
 ```
 
-### 2. Create your environment file
-
-On macOS, Linux, or WSL:
-
-```sh
-cp .env.local.example .env.local
-```
-
-On Windows PowerShell:
+Copy `.env.local.example` to `.env.local`:
 
 ```powershell
+# Windows PowerShell
 Copy-Item .env.local.example .env.local
 ```
 
-For a local run without a database, use:
-
-```dotenv
-NEXT_PUBLIC_DEMO_MODE=true
-GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL=gemini-3-flash-preview
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+```sh
+# macOS / Linux
+cp .env.local.example .env.local
 ```
 
-This loads 12 fictional players, two teams, three completed matches, and a live chase. Cricket data changes stay in the browser under separate sample-data storage keys. They do not write to Supabase. AI requests are not mocked: they still go to Gemini. Without a Gemini key, the regular cricket features work and the AI panels show a disconnected state.
+Fill in the following configuration. Environment files and dependencies are ignored by Git.
 
-### 3. Start the app
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Required: Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Required: server-side service-role key for database endpoints and seeding |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public publishable key for optional Supabase sign-in |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Alternative legacy public key; use this or the publishable key |
+| `GEMINI_API_KEY` | Server-side credential required for AI features |
+| `GEMINI_MODEL` | Defaults to `gemini-3-flash-preview`; must be available to your Gemini key |
+| `NEXT_PUBLIC_APP_URL` | Application origin when using authentication redirects |
+
+Never prefix the service-role key or Gemini key with `NEXT_PUBLIC_`. There is no `NEXT_PUBLIC_DEMO_MODE` setting and no local-data fallback.
+
+### Prepare the database
+
+1. Create or open your Supabase project.
+2. Run [supabase/schema.sql](supabase/schema.sql) in its SQL Editor. The script creates missing tables, database functions, and default club settings. It does not drop existing data and can be rerun against the project's original schema.
+3. Set the project's URL and service-role key in `.env.local`.
+4. Insert the fictional cricket data:
+
+```sh
+npm run db:seed
+```
+
+The seed inserts 12 fictional players, three completed matches, and one live chase. Stable UUIDs prevent duplicate seed rows. Existing seed players and matches are kept, so rerunning the command does not reset a match somebody has scored. Other database records are left alone. Seeding is never run automatically by the app or during deployment.
+
+To validate the fixtures without connecting to a database:
+
+```sh
+node scripts/seed.cjs --dry-run
+```
+
+### Run the app
 
 ```sh
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). A working Supabase project and the schema are required to use the app. Without them, the app shows a database error with a retry action. Gemini remains optional for ordinary scoring.
 
-Restart the development server after changing environment variables. Variables prefixed with `NEXT_PUBLIC_` are bundled into the browser application; changes also require a rebuild for a production deployment.
-
-## Environment variables
-
-| Variable | Purpose | Required |
-| --- | --- | --- |
-| `NEXT_PUBLIC_DEMO_MODE` | `true` uses browser-local sample data; `false` uses Supabase | Set explicitly for the intended mode |
-| `GEMINI_API_KEY` | Server-side Gemini credential | For AI features |
-| `GEMINI_MODEL` | Gemini text model with structured-output support | Optional; defaults to `gemini-3-flash-preview` |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Database mode |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase public publishable key | Database mode; alternatively use the anon key |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Legacy public anon key, used when no publishable key is set | Alternative to the publishable key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-side credential used by data endpoints | Database mode |
-| `NEXT_PUBLIC_APP_URL` | Application origin used for sign-up confirmation redirects | When using sign-in/sign-up |
-
-Keep `GEMINI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` server-side. Do not prefix either with `NEXT_PUBLIC_`. Local environment files are ignored by Git; the example file contains placeholders only.
-
-## Set up Supabase
-
-1. Create a Supabase project and copy its project URL, public publishable or anon key, and service-role key into `.env.local`.
-2. Review and run [supabase/schema.sql](supabase/schema.sql) in the project's SQL Editor.
-3. Set `NEXT_PUBLIC_DEMO_MODE=false` and restart the app.
-
-**The schema is a reset script. It drops existing cricket tables and recreates them. Use a new or disposable database, or back up existing data before running it.** It also inserts an initial player roster. The app's players endpoint seeds that roster again if the database contains no players.
-
-The schema defines:
-
-| Object | Purpose |
-| --- | --- |
-| `players` | Profiles, skill ratings, and career totals |
-| `matches` | Match metadata and a JSONB match-state snapshot |
-| `balls` | Schema for individual deliveries |
-| `player_stats` | Schema for per-player, per-match statistics |
-| `player_analytics` | SQL view used by the leaderboard endpoint |
-
-The current sync endpoint stores match snapshots and updates player career totals. It does not populate every schema table or provide a complete analytics ingestion pipeline.
-
-## Use the app
-
-1. Open **The squad** to add or edit players and their skill ratings.
-2. Open **Match centre**, select available players, and generate teams.
-3. Review the team metrics, swap players if needed, or request a Gemini team review. Suggested swaps require your action and are validated before applying.
-4. Configure the match rules, complete the toss, and select the opening batters and bowler.
-5. Record deliveries on the live scoring screen. Use undo to correct the latest delivery.
-6. After the match, review the scorecard and charts or request Gemini match analysis.
-7. Open a player profile to choose a practice focus and request a coaching plan.
-
-## Architecture
+## Data flow and architecture
 
 ```mermaid
 flowchart TD
-    UI["Next.js pages and components"] --> State["Zustand stores"]
-    State --> Engines["Scoring and balancing engines"]
-    UI --> Data["Data requests"]
-    Data --> API["Next.js API routes"]
-    Data --> Local["Local sample-data adapter"]
-    Local --> Storage["Browser storage"]
+    UI["Next.js pages and components"] --> State["Temporary Zustand state"]
+    State --> Cricket["Scoring and balancing engines"]
+    State --> API["Next.js API routes"]
+    UI --> API
     API --> DB["Supabase PostgreSQL"]
     API --> AI["Gemini REST API"]
+    Seed["Explicit seed command"] --> DB
 ```
 
-### Cricket logic and state
+On startup, the database provider loads shared settings and either the requested match or the most recently updated active match. Player pages fetch the database roster. Match history loads completed matches; selecting a scorecard loads its saved snapshot. Match URLs include their database ID so they can be reopened on another device.
 
-`scoring/engine.ts` handles score calculations, run rates, overs, and match helpers. `balancing/engine.ts` generates teams from skill ratings and recorded performance; this algorithm works without an LLM. `commentary/generator.ts` produces template-based delivery commentary.
+A new match must save successfully before scoring opens. Every scoring-state change queues a snapshot save in order. A status message shows saving, success, or failure. Failed saves remain in memory for retry; there is no browser backup or offline queue. Keep the page open until the save completes. A refresh restores the latest successfully saved snapshot, including the active batters and bowler.
 
-Zustand stores hold the live match, player roster, settings, and match setup. Match, player, and settings state persist in browser storage; team setup is temporary. The live scoring page attempts match synchronisation every 30 seconds, and the summary page also requests a sync.
+The `save_cricket_match` database function saves the snapshot and replaces that match's derived player statistics in one transaction. Career totals are recalculated from stored matches rather than incremented, so retrying a completed-match save does not double count it. Deleting matches also refreshes totals. Individual deliveries live in the JSONB snapshot; the original `balls` table is retained for schema compatibility and is not separately populated.
 
-In local sample-data mode, `DemoProvider` intercepts supported browser cricket-data requests and handles them through the local adapter. The server's database endpoints are unchanged. Requests to `/api/ai/*` always reach the server.
+Shared default rules and sound preferences are stored in `club_settings`. Team selection and the pre-match setup wizard remain temporary until a match is created; refreshing midway through setup starts that wizard again. The UI uses a fixed dark theme.
 
-### Gemini integration
-
-The browser builds a limited cricket context and sends it to a Next.js route. The server validates it with Zod, calls Gemini with a JSON response schema, and validates the result again before returning it. It forwards selected cricket fields rather than full account or store records.
-
-Reports are generated on demand and kept in component memory. Changing the input discards stale results and cancels the current client request. Suggested team swaps cannot reference unknown players or move a shared common player; applying a swap recalculates the team metrics.
-
-AI endpoints enforce a 96 KB request-body limit, a 25-second provider timeout, and process-local rate limits. The key is never sent to the browser.
+Gemini requests always reach the server and use the real configured provider. Inputs and outputs are validated with Zod. AI routes enforce a 96 KB request limit, a 25-second provider timeout, and process-local rate limits. Reports are generated on demand and held temporarily in component memory; no fake AI reports are seeded.
 
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
-| `app/` | Pages, layouts, global styles, and API route handlers |
-| `components/` | Navigation, player cards, scoring dialogs, charts, and AI panels |
-| `providers/` | Theme setup and local sample-data integration |
-| `store/` | Zustand match, player, settings, and setup state |
-| `scoring/` | Match and delivery calculations |
-| `balancing/` | Team generation, swaps, and strength calculations |
-| `commentary/` | Delivery commentary templates |
-| `lib/ai/` | Gemini client, context builders, and validation contracts |
-| `lib/demo/` | Optional local data fixtures and request adapter |
-| `supabase/` | Browser/server clients and database schema |
-| `types/` | Shared cricket and application types |
-| `tests/` | Automated AI, validation, and local-data tests |
-| `public/` | Static application metadata |
+| `app/` | Pages and Next.js API routes |
+| `components/` | Navigation, scoring dialogs, player cards, charts, AI panels |
+| `providers/DatabaseProvider.tsx` | Database startup loading and persistence subscriptions |
+| `store/` | Temporary match, player, settings, and setup state |
+| `scoring/`, `balancing/`, `commentary/` | Cricket calculations, team generation, commentary |
+| `lib/database/` | Snapshot save queue, validation, per-match statistics |
+| `lib/ai/` | Gemini client, validation contracts, context builders |
+| `supabase/` | Database clients, repeatable schema, server-only seed fixtures |
+| `scripts/seed.cjs` | Explicit Supabase seeding command |
+| `tests/` | Automated AI and database-flow regression tests |
+| `types/` | Shared application and cricket types |
 
 ## API routes
 
 | Route | Methods | Purpose |
 | --- | --- | --- |
-| `/api/players` | GET, POST | List or create players |
+| `/api/players` | GET, POST | List or create players; reads never auto-seed |
 | `/api/players/[id]` | GET, PATCH, DELETE | Read, edit, or delete a player |
-| `/api/teams/generate` | POST | Generate balanced teams |
-| `/api/matches` | GET, POST, DELETE | List, create, or clear matches |
-| `/api/matches/[id]` | DELETE | Delete a match |
-| `/api/matches/sync` | POST | Save a match snapshot and update completed-match career totals |
-| `/api/stats` | GET | Read leaderboard data |
-| `/api/ai/status` | GET | Check whether Gemini is configured |
-| `/api/ai/teams` | POST | Review teams and suggest an optional swap |
-| `/api/ai/match` | POST | Analyse a match |
-| `/api/ai/coach` | POST | Generate a practice plan |
-| `/api/auth/callback` | GET | Complete a Supabase sign-in callback |
+| `/api/teams/generate` | POST | Generate teams from database players |
+| `/api/matches` | GET, POST, DELETE | List, save, or clear matches; `active=true` loads the latest active snapshot |
+| `/api/matches/[id]` | GET, DELETE | Load a full snapshot or delete a match |
+| `/api/matches/sync` | POST | Transactionally save a match and derived stats |
+| `/api/settings` | GET, PUT | Read or save shared club preferences |
+| `/api/stats` | GET | Read the database analytics view |
+| `/api/ai/status` | GET | Check Gemini configuration |
+| `/api/ai/teams`, `/api/ai/match`, `/api/ai/coach` | POST | Generate real Gemini reports |
+| `/api/auth/callback` | GET | Complete optional Supabase authentication |
 
-## Development commands
+## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start the development server |
-| `npm run build` | Create the production build |
-| `npm start` | Serve an existing production build |
-| `npm test` | Run automated tests without a real key or database |
-| `npm run test:ai` | Alias for the same test suite |
-| `npm run typecheck` | Check TypeScript types |
-| `npm run lint` | Run the Next.js ESLint checks |
+| `npm run dev` | Start development |
+| `npm run build` | Build for production |
+| `npm start` | Serve the production build |
+| `npm test` | Run automated tests |
+| `npm run typecheck` | Check TypeScript |
+| `npm run lint` | Run ESLint |
+| `npm run db:seed` | Insert fictional data into the configured Supabase project |
 
-Tests exercise the actual validation, Gemini client, route handlers, context builders, swap logic, and local-data adapter. Gemini HTTP requests and the Next.js response adapter are mocked. These checks do not replace live browser, database, or provider integration testing.
+## Deploy on Vercel
 
-## Deployment
+1. Run the schema and seed against the intended Supabase project.
+2. Import this GitHub repository into Vercel with Next.js as the framework and the repository root as the root directory.
+3. Add the Supabase URL, service-role key, optional public auth key, and Gemini configuration under Environment Variables. Add them to each environment that should use that project. Production and previews pointed at the same database share and modify the same data.
+4. Remove `NEXT_PUBLIC_DEMO_MODE` if it was previously configured.
+5. Deploy. Set `NEXT_PUBLIC_APP_URL` to the deployed origin if using authentication and redeploy after changing environment variables.
 
-The repository includes Vercel configuration. Import the repository, configure the environment variables for the intended storage mode, and use `npm run build` as the build command. For another Node.js host, build with `npm run build` and serve with `npm start`.
+Database clients are created at request time. A build does not query Supabase or seed data. A successful build does not verify your credentials or schema: check the deployed roster, history, scoring, and Gemini after deployment.
 
-Local sample data lives in each visitor's browser; it is not a shared database. Use Supabase mode when players and matches need shared persistence.
+## Scope and limitations
 
-## Current limits
-
-- Data endpoints use a server-side service-role client for a shared club dataset. The optional login page does not enforce user isolation or protect those endpoints. Add authorisation before opening the app to untrusted users.
-- AI rate limits are in memory per server process. They are not shared across instances or retained after restarts.
-- Match synchronisation and aggregate statistics are not a transactional, idempotent pipeline. Database analytics and repeated completed-match syncs need further validation before production use.
-- Browser persistence restores local state, but there is no service-worker cache or complete offline sync queue. The web manifest alone does not provide full offline/PWA support.
+- This follows the original shared-club workflow. Everyone using the deployment sees the same dataset and can change it through the app. Optional sign-in does not provide ownership checks. It is not a private workspace per user.
+- Direct anonymous database access is blocked by RLS; server endpoints use the service-role client. The endpoints themselves do not yet enforce authentication or role-based permissions.
+- Use one scorer per match. Saves are ordered within a browser session; there is no cross-device edit locking or realtime collaborative scoring. Reload another device to see saved changes.
+- Network access is required. Unsaved changes can be lost if the page closes before a successful save. Nothing is written to browser local storage.
+- AI rate limits are per server process. Gemini availability and quota depend on the configured provider account.
 
 ## Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
-| `next` is not recognised | Run `npm ci` in the repository root |
-| Sample players appear instead of the database roster | Set `NEXT_PUBLIC_DEMO_MODE=false`, configure Supabase, and restart |
-| Gemini is disconnected | Set the server-side `GEMINI_API_KEY` and restart |
-| Gemini rejects the model or returns a quota error | Choose a model accessible to the key, or check the project's provider quota |
-| Player or match requests fail in database mode | Check the Supabase URL, public key, service-role key, and schema |
-| Leaderboard totals are empty in database mode | Check whether `player_stats` is populated; the view aggregates that table |
-| Sign-in confirmation redirects incorrectly | Set `NEXT_PUBLIC_APP_URL` to the app's origin |
+| Missing Supabase configuration | Set the project URL and server-side service-role key, then restart or redeploy |
+| Missing table or RPC function | Run the current `supabase/schema.sql` in the correct project |
+| Roster and history are empty | Run `npm run db:seed`, or add players and play matches |
+| Match not saved | Keep the page open, check connectivity, and use Retry save |
+| Gemini is disconnected | Configure `GEMINI_API_KEY` and restart or redeploy |
+| Gemini quota or model error | Check the key's quota and model access |

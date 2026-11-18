@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RotateCcw } from 'lucide-react'
+import { toast } from 'sonner'
 import { useMatchStore } from '@/store/matchStore'
 import { computeCRR, computeRRR, formatOvers, getOverSummaries, BALLS_PER_OVER } from '@/scoring/engine'
 import WicketModal from '@/components/modals/WicketModal'
@@ -51,14 +52,6 @@ export default function LiveMatchPage() {
   useEffect(() => {
     if (!match) { router.push('/'); return }
   }, [match, router])
-
-  useEffect(() => {
-    // Auto-sync every 30s
-    const interval = setInterval(() => {
-      useMatchStore.getState().syncToSupabase()
-    }, 30000)
-    return () => clearInterval(interval)
-  }, [])
 
   if (!match) return null
 
@@ -158,7 +151,7 @@ export default function LiveMatchPage() {
     } else {
       completeMatch('team_a_won', latestMatch.innings1.batting_team.id)
     }
-    router.push('/match/summary')
+    router.push(`/match/summary?match=${latestMatch.id}`)
   }
 
   async function handleDisbandMatch() {
@@ -167,9 +160,13 @@ export default function LiveMatchPage() {
     if (!ok) return
 
     try {
-      await fetch(`/api/matches/${match.id}`, { method: 'DELETE' })
+      // Wait for pending snapshots so a late save cannot recreate the match.
+      await useMatchStore.getState().syncToSupabase()
+      const response = await fetch(`/api/matches/${match.id}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Delete failed')
     } catch {
-      // Best-effort cleanup; local disband should still proceed.
+      toast.error('Could not disband the match in Supabase. Try again.')
+      return
     }
 
     clearMatch()
@@ -183,7 +180,7 @@ export default function LiveMatchPage() {
   }
 
   if (match.status === 'completed') {
-    router.push('/match/summary')
+    router.push(`/match/summary?match=${match.id}`)
     return null
   }
 

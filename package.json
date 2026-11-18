@@ -10,37 +10,37 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test tests/ai.test.cjs",
+    "test": "node --test tests/*.test.cjs",
     "test:ai": "npm test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:seed": "node scripts/seed.cjs"
   },
   "dependencies": {
-    "next": "14.2.5",
+    "@supabase/ssr": "^0.3.0",
+    "@supabase/supabase-js": "^2.44.4",
+    "canvas-confetti": "^1.9.3",
+    "framer-motion": "^11.3.8",
+    "lucide-react": "^0.414.0",
+    "next": "14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@supabase/supabase-js": "^2.44.4",
-    "@supabase/ssr": "^0.3.0",
-    "zustand": "^4.5.4",
-    "framer-motion": "^11.3.8",
     "recharts": "^2.12.7",
-    "zod": "^3.23.8",
-    "lucide-react": "^0.414.0",
     "sonner": "^1.5.0",
-    "canvas-confetti": "^1.9.3",
-    "next-themes": "^0.3.0",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "zod": "^3.23.8",
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20.14.12",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/uuid": "^10.0.0",
-    "@types/canvas-confetti": "^1.9.0",
-    "typescript": "^5.5.4",
-    "tailwindcss": "^3.4.6",
     "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.40",
     "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.5"
+    "eslint-config-next": "14.2.35",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.6",
+    "typescript": "^5.5.4"
   }
 }
