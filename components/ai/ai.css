@@ -1,0 +1,39 @@
+.ai-panel { padding: 25px; border: 1px solid #d2f65a35; border-radius: 12px; background: radial-gradient(ellipse at top right,#d2f65a09,transparent 65%),#191e15; }
+.ai-panel-heading { display: flex; align-items: center; gap: 12px; }
+.ai-feature-icon { display: grid; place-items: center; height: 43px; width: 43px; flex-shrink: 0; border-radius: 12px; border: 1px solid #d2f65a25; background: #d2f65a10; color: #d2f65a; }
+.ai-panel-heading .eyebrow { font-size: 7px; letter-spacing: 1.3px; }
+.ai-panel-heading h2 { font-family: var(--font-display),sans-serif; font-size: 28px; font-weight: 600; line-height: 1.2; margin-top: 5px; }
+.ai-provider { margin-left: auto; font-size: 8px; letter-spacing: 1.8px; color: #a4b493; border: 1px solid #ffffff16; border-radius: 5px; padding: 6px 9px; }
+.ai-description { color: #c0c9b4; font-size: 12px; line-height: 1.8; margin-top: 18px; max-width: 700px; }
+.ai-disclosure { font-size: 10px; line-height: 1.7; color: #94a185; margin-top: 9px; }
+.ai-connection-note { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 11px; color: #b8c5a6; border: 1px dashed #d2f65a24; border-radius: 8px; padding: 14px; margin-top: 20px; line-height: 1.8; }
+.ai-panel-controls { display: flex; align-items: center; gap: 18px; margin-top: 21px; flex-wrap: wrap; }
+.ai-panel .compact-cta { font-size: 11px; padding: 12px 15px; min-height: 42px; }
+.ai-panel .compact-cta:disabled { opacity: .45; transform: none; }
+.ai-error { padding: 14px; margin-top: 16px; border: 1px solid #e7a75640; background: #e7a75608; color: #e8c998; border-radius: 8px; font-size: 12px; line-height: 1.7; }
+.ai-report { border-top: 1px solid #ffffff12; margin-top: 25px; padding-top: 22px; overflow-wrap: anywhere; }
+.ai-generated-label { font-size: 8px; letter-spacing: 1px; color: #a4b493; }
+.ai-report h3 { font-family: var(--font-display),sans-serif; font-size: 28px; font-weight: 600; line-height: 1.25; margin: 11px 0; }
+.ai-summary { font-size: 12px; line-height: 1.9; color: #c1cbb5; white-space: pre-line; }
+.ai-insights { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-top: 23px; }
+.ai-insights article { display: flex; align-items: flex-start; gap: 13px; padding: 15px; border: 1px solid #ffffff0e; border-radius: 8px; background: #ffffff02; }
+.ai-insights article > span { font-family: var(--font-display),sans-serif; color: #d2f65a; font-size: 22px; line-height: 1; }
+.ai-report h4 { font-size: 12px; font-weight: 600; color: #e6eddb; }
+.ai-report article p, .ai-swap > p { font-size: 11px; line-height: 1.9; color: #a4b394; margin-top: 7px; white-space: pre-line; }
+.ai-actions { margin: 22px 0 18px; padding: 21px; background: #d2f65a06; border: 1px solid #d2f65a17; border-radius: 8px; }
+.ai-actions article { margin-top: 18px; }
+.ai-swap { padding: 20px; margin-bottom: 20px; border: 1px solid #d2f65a40; border-radius: 8px; }
+.ai-swap .compact-cta { margin-top: 15px; }
+.ai-data-note { font-size: 10px; line-height: 1.8; color: #929f82; margin-top: 12px; }
+.coach-feature { border: 1px solid #d2f65a30; border-radius: 12px; overflow: hidden; background: #191e15; }
+.coach-feature .ai-panel { border: none; border-top: 1px solid #ffffff10; border-radius: 0; }
+.coach-inputs { padding: 25px; }
+.coach-label, .coach-inputs label { font-size: 12px; font-weight: 600; color: #d5deca; }
+.coach-inputs label { display: block; margin: 20px 0 9px; }
+.coach-inputs label span { color: #91a17e; font-weight: 400; }
+.coach-focus { display: flex; gap: 8px; margin-top: 12px; }
+.coach-focus button { border: 1px solid #ffffff15; padding: 10px 15px; border-radius: 6px; font-size: 11px; text-transform: capitalize; color: #aebba0; min-height: 42px; }
+.coach-focus button.is-active { border-color: #d2f65a60; color: #d2f65a; background: #d2f65a10; }
+.coach-inputs textarea { width: 100%; padding: 12px 14px; resize: vertical; min-height: 74px; background: #11170d; border: 1px solid #ffffff1c; border-radius: 7px; font-size: 12px; color: #e4ebda; line-height: 1.8; }
+.coach-inputs > p:last-child { color: #98a78a; font-size: 10px; margin-top: 9px; line-height: 1.7; }
+@media(max-width:560px) { .ai-panel,.coach-inputs { padding: 20px 16px; }.ai-panel-heading h2 { font-size: 24px; }.ai-panel-heading { gap: 9px; }.ai-provider { display: none; }.ai-panel-heading .eyebrow { font-size: 6px; }.ai-insights { grid-template-columns: 1fr; gap: 10px; }.ai-actions { padding: 16px; }.ai-report h3 { font-size: 25px; }.coach-inputs textarea { font-size: 16px; }.coach-focus button { flex: 1; padding: 10px; } }
